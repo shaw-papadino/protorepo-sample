@@ -8,6 +8,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write  # ← `write` 権限を付与する
+
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -15,7 +18,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0  # push するために全履歴を取得
+          fetch-depth: 0
+          persist-credentials: false  # ← `GITHUB_TOKEN` で push するために false にする
 
       - name: Install buf
         run: |
@@ -34,4 +38,5 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git add gen/
           git commit -m "Auto-generate gRPC code" || exit 0  # 変更がなければスキップ
-          git push origin HEAD:${{ github.head_ref }}  # PR のブランチに push
+          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin HEAD:${{ github.head_ref }}
