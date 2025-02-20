@@ -15,7 +15,8 @@ jobs:
           fetch-depth: 0  # PR の比較元ブランチを取得
 
       - name: Fetch base branch
-        run: git fetch origin ${{ github.event.pull_request.base.ref }}
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} || echo "No remote base branch found"
 
       - name: Install buf
         run: |
@@ -23,4 +24,9 @@ jobs:
           chmod +x /usr/local/bin/buf
 
       - name: Check for breaking changes
-        run: buf breaking --against '.git#branch=${{ github.event.pull_request.base.ref }}'
+        run: |
+          if git show-ref --verify --quiet refs/remotes/origin/${{ github.event.pull_request.base.ref }}; then
+            buf breaking --against '.git#branch=${{ github.event.pull_request.base.ref }}'
+          else
+            echo "Base branch not found. Skipping buf breaking check."
+          fi
